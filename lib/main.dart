@@ -21,7 +21,8 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.red,
       ),
-      home: LoginPage(), // Start from LoginPage
+      home: LoginPage(),
+      debugShowCheckedModeBanner: false, // Start from LoginPage
     );
   }
 }

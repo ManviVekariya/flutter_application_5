@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'database63.dart'; // Import the database service
 
 void main() {
   runApp(QuickFoodieApp());
@@ -15,6 +16,10 @@ class QuickFoodieApp extends StatelessWidget {
 }
 
 class QuickFoodiePage extends StatelessWidget {
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController descriptionController = TextEditingController();
+  final TextEditingController imageUrlController = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -39,46 +44,77 @@ class QuickFoodiePage extends StatelessWidget {
             ),
             SizedBox(height: 20),
             Image.asset(
-              'assets/burger.jpg', // path to your local asset
+              'assets/burger.jpg', // Local asset
               height: 100,
             ),
             SizedBox(height: 20),
             TextField(
+              controller: nameController,
               decoration: InputDecoration(
                 border: OutlineInputBorder(),
-                labelText: 'Food name',
+                labelText: 'Food Name',
+              ),
+            ),
+            SizedBox(height: 20),
+            TextField(
+              controller: descriptionController,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: 'Food Description',
+              ),
+            ),
+            SizedBox(height: 20),
+            TextField(
+              controller: imageUrlController,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: 'Image URL',
               ),
             ),
             SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                // Add the new food item to Firestore
+                DatabaseService().addFoodItem(
+                  nameController.text,
+                  descriptionController.text,
+                  imageUrlController.text,
+                );
+                nameController.clear();
+                descriptionController.clear();
+                imageUrlController.clear();
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.black87,
                 padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
               child: Text(
-                'Add Items',
+                'Add Item',
                 style: TextStyle(fontSize: 16),
               ),
             ),
             SizedBox(height: 30),
             Expanded(
-              child: GridView.count(
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                children: [
-                  FoodCard(
-                    imageUrl: 'assets/burger.jpg', // chicken burger image
-                    name: 'Hamburger',
-                    description: 'Chicken Burger',
-                  ),
-                  FoodCard(
-                    imageUrl: 'assets/burger.jpg', // fried chicken burger image
-                    name: 'Hamburger',
-                    description: 'Fried Chicken Burger',
-                  ),
-                ],
+              child: StreamBuilder<List<FoodItem>>(
+                stream: DatabaseService().getFoodItems(),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return Center(child: CircularProgressIndicator());
+                  }
+                  final foodItems = snapshot.data!;
+                  return GridView.count(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    children: foodItems.map((food) {
+                      return FoodCard(
+                        imageUrl: food.imageUrl,
+                        name: food.name,
+                        description: food.description,
+                      );
+                    }).toList(),
+                  );
+                },
               ),
             ),
           ],
@@ -132,8 +168,8 @@ class FoodCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           SizedBox(height: 10),
-          Image.asset(
-            imageUrl, // Load image from assets
+          Image.network(
+            imageUrl, // Load image from network (Firestore URL)
             height: 80,
             fit: BoxFit.cover,
           ),
